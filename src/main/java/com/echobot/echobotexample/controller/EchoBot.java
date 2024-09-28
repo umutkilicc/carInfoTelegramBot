@@ -40,15 +40,17 @@ class EchoBot extends TelegramLongPollingBot {
     private final ExcelDowloadService excelDowloadService;
     private final CarService carService;
     private final ReadExcelService readExcelService;
+    private final Button button;
     private Map<String, String> userLastMessages = new HashMap<>();
 
-    EchoBot(@Value("${bot.BOT_TOKEN}") String BOT_TOKEN, @Value("${bot.BOT_USERNAME}") String BOT_USERNAME, LogService logService, ExcelDowloadService excelDowloadService, CarService carService, ReadExcelService readExcelService) {
+    EchoBot(@Value("${bot.BOT_TOKEN}") String BOT_TOKEN, @Value("${bot.BOT_USERNAME}") String BOT_USERNAME, LogService logService, ExcelDowloadService excelDowloadService, CarService carService, ReadExcelService readExcelService, Button button) {
         this.BOT_TOKEN = BOT_TOKEN;
         this.BOT_USERNAME = BOT_USERNAME;
         this.logService = logService;
         this.excelDowloadService = excelDowloadService;
         this.carService = carService;
         this.readExcelService = readExcelService;
+        this.button = button;
     }
 
     @Override
@@ -102,33 +104,42 @@ class EchoBot extends TelegramLongPollingBot {
 
         if (update.hasMessage() && update.getMessage().hasText()) {
             logService.saveLog(update);
-            if (update.getMessage().getText().equals("/yukle")) {
+            if (update.getMessage().getText().equals("Yeni liste yükle")) {
                 userLastMessages.put(update.getMessage().getChatId().toString(), update.getMessage().getText());
                 try {
                     sendMessage(update.getMessage().getChatId().toString(), "Lütfen bir Excel dosyası yükleniyiniz. Bu işlem sonucunda tüm veriler silinecek ve yüklediğiniz Excel içerisindeki veriler kaydedilecektir.");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } else if (update.getMessage().getText().equals("/ekle")) {
+            } else if (update.getMessage().getText().equals("Yeni araç ekle")) {
                 userLastMessages.put(update.getMessage().getChatId().toString(), update.getMessage().getText());
                 try {
                     sendMessage(update.getMessage().getChatId().toString(), "Lütfen bir Excel dosyası yükleniyiniz. Bu işlem sonucunda mevcut verilerinize ek olarak yeni kayıtlar eklenecektir.");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } else if (update.getMessage().getText().equals("/indir")) {
+            } else if (update.getMessage().getText().equals("Mevcut listeyi indir")) {
                 if (excelDowloadService.dateExcelDownload() != null) {
                     sendDocument(update.getMessage().getChatId().toString(), excelDowloadService.dateExcelDownload());
                 } else {
                     sendMessage(update.getMessage().getChatId().toString(), "Excel dosyası oluşturulurken bir hata oluştu.");
                 }
-            } else if (update.getMessage().getText().equals("/log")) {
+            } else if (update.getMessage().getText().equals("Log kayıtlarını indir")) {
 
                 if (excelDowloadService.logExcelDownload() != null) {
                     sendDocument(update.getMessage().getChatId().toString(), excelDowloadService.logExcelDownload());
                 } else {
                     sendMessage(update.getMessage().getChatId().toString(), "Excel dosyası oluşturulurken bir hata oluştu.");
                 }
+            } else if (update.getMessage().getText().equals("/start")) {
+                SendMessage message = new SendMessage();
+                message = button.createReplyKeyboardMessage(update.getMessage().getChatId());
+                try {
+                    execute(message);
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                }
+
             } else {
                 if (carService.getCar(update) != null) {
                     SendMessage message = carService.getCar(update);
